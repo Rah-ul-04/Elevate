@@ -1,8 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "react-native-vector-icons";
+import { useFonts } from 'expo-font';
 
 const ChatBubble = ({ role, text, onSpeech }) => {
+  const [fontsLoaded] = useFonts({
+    'GothamBold': require('./assets/fonts/Gotham-Bold.otf'),
+  });
   return (
     <View
       style={[
@@ -30,15 +34,16 @@ const styles = StyleSheet.create({
   },
   userChatItem: {
     alignSelf: "flex-end", // Aligns user's chat on the right side
-    backgroundColor: "#007AFF", // User chat background color
+    backgroundColor: "#9bb1fd", // User chat background color
   },
   modelChatItem: {
     alignSelf: "flex-start", // Aligns model/chatbot chat on the left side
-    backgroundColor: "#333", // Chatbot chat background color
+    backgroundColor: "#f39071", // Chatbot chat background color
   },
   chatText: {
     fontSize: 16,
-    color: "#fff", // Ensure text is visible
+    color: "#fff",
+    fontFamily:"GothamBold" // Ensure text is visible
   },
   speakerIcon: {
     position: "absolute",

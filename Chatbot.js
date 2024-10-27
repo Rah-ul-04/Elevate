@@ -12,46 +12,69 @@ import {
 import axios from "axios";
 import ChatBubble from "./ChatBubble";
 import { speak, isSpeakingAsync, stop } from "expo-speech";
+import { useFonts } from 'expo-font';
+
+
 
 const Chatbot = () => {
-  const [chat, setChat] = useState([]);
-  const [userInput, setUserInput] = useState(""); // Fixed typo here
+  // Initialize chat with system instructions
+  const [chat, setChat] = useState([
+    {
+      role: "model",
+      parts: [{
+        text: "You are Lisa, a friendly and knowledgeable AI assistant. Your personality traits are:\n" +
+              "1. Always maintain a friendly and professional tone\n" +
+              "2. Provide clear, concise, and accurate information\n" +
+              "3. Use simple language and avoid technical jargon\n" +
+              "4. If unsure, honestly admit it\n" +
+              "5. Occasionally use emojis to be engaging\n" +
+              "6. Help users with their questions while being supportive\n" +
+              "7. Maintain context throughout the conversation\n" +
+              "8. Break down complex concepts into simpler explanations\n"+
+              "9. Act like a proffesional psychologist\n"+
+              "10.If user asks anything or requests anything other than something that affects their mental wellbeing just reply that my job is to take care of your mental health and if you have questions regarding that ill help you\n"+
+              "11.If they ask you to do anything for fun until you are sure its going to make them happy dont do it dont be victim of abuse"
+      }]
+    }
+  ]);
+  
+  const [userInput, setUserInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false); // For handling speech
-
-  const API_KEY = 'AIzaSyCO9WP87ZDFY_F4mV2TeKGx8tTq42H7AqA'; // Example key, replace with actual
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [fontsLoaded] = useFonts({
+    'GothamBold': require('./assets/fonts/Gotham-Bold.otf'),
+  });
+  const API_KEY = 'AIzaSyCO9WP87ZDFY_F4mV2TeKGx8tTq42H7AqA';
   
   const handleUserInput = async () => {
-    if (!userInput.trim()) {
-      return; // Do nothing if input is empty
-    }
+    if (!userInput.trim()) return;
   
     let updatedChat = [
-      ...chat,
+      ...chat, // Includes the system instructions
       {
         role: "user",
         parts: [{ text: userInput }],
       },
     ];
     
-    console.log("Sending to Gemini:", updatedChat); // Log before sending
-    
     setLoading(true);
-    setError(null); // Clear any previous errors
+    setError(null);
   
     try {
       const response = await axios.post(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`,
         {
           contents: updatedChat,
-          
+          generationConfig: {
+            temperature: 0.7,     // Controls response creativity
+            topP: 0.8,           // Controls response diversity
+            topK: 40,            // Controls response focus
+            maxOutputTokens: 1000 // Maximum length of response
+          }
         }
       );
   
-      console.log("Gemini Full Response:", JSON.stringify(response.data, null, 2)); // Full response log
-  
-      // Updated response parsing to match the actual structure
       const modelResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
   
       if (modelResponse) {
@@ -63,7 +86,7 @@ const Chatbot = () => {
           },
         ];
         setChat(updatedChatWithModel);
-        setUserInput(""); // Clear input after sending
+        setUserInput("");
       }
     } catch (error) {
       console.error("Error calling Gemini", error);
@@ -72,7 +95,7 @@ const Chatbot = () => {
       setLoading(false);
     }
   };
-  
+
   const handleSpeech = async (text) => {
     if (isSpeaking) {
       stop();
@@ -95,9 +118,8 @@ const Chatbot = () => {
 
   return (
     <View style={styles.container}>
-     
       <FlatList
-        data={chat}
+        data={chat.slice(1)} // Skip showing the instruction message
         renderItem={renderChatItem}
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.chatContainer}
@@ -108,7 +130,7 @@ const Chatbot = () => {
           placeholder="Type your message"
           placeholderTextColor={"#aaa"}
           value={userInput}
-          onChangeText={setUserInput} // Fixed onChangeText handler
+          onChangeText={setUserInput}
         />
         <TouchableOpacity style={styles.button} onPress={handleUserInput}>
           <Text style={styles.buttonText}>Send</Text>
@@ -125,14 +147,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: "#f8f8f8",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 20,
-    marginTop: 40,
-    textAlign: "center",
   },
   chatContainer: {
     flexGrow: 1,
@@ -154,7 +168,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   button: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "rgba(243, 144, 113, 1.00)",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 25,
@@ -162,6 +176,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     textAlign: "center",
+    fontFamily:"GothamBold"
   },
   loading: {
     marginTop: 10,
